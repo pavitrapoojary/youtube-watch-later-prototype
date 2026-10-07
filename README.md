@@ -125,7 +125,14 @@ The repository includes a self-contained, high-fidelity interactive prototype ([
 
 ## 🚀 Running the Prototype
 
-1. Navigate to https://youtube-watch-later-prototype.vercel.app/
+1. Navigate to https://youtube-watch-later-prototype.vercel.app/ (or open `index.html` locally in any modern browser).
 2. Use the header tabs to switch between the **📑 Case Study Deck** and **⚡ Live Interactive Prototype**.
 
 ---
+
+## 👤 Author & Connect
+
+**Built with Curiosity by [Pavitra Poojary](https://pavitra-poojary.vercel.app/)**
+
+* 💼 **LinkedIn:** [linkedin.com/in/pavitra-poojary](https://www.linkedin.com/in/pavitra-poojary)
+* 🌐 **Portfolio:** [pavitra-poojary.vercel.app](https://pavitra-poojary.vercel.app/)
