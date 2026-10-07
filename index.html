@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>YouTube Watch Later 2.0</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF0000' d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z'/%3E%3Cpolygon fill='%23FFFFFF' points='9.545 15.568 15.818 12 9.545 8.432'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      box-sizing: border-box;
+      --bg: #f8f9fa;
+      --bg-card: #ffffff;
+      --tx: #0f0f0f;
+      --tx-sec: #606060;
+      --tx-muted: #888888;
+      --border: #e5e5e5;
+      --yt-red: #ff0000;
+      --yt-red-dark: #cc0000;
+      --yt-chip: #0000000a;
+      --yt-chip-hover: #00000014;
+      --yt-blue: #065fd4;
+      --yt-green: #0f8b44;
+      --yt-purple: #7038b8;
+      --sidebar-w: 360px;
+      --nav-h: 56px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--tx);
+      line-height: 1.5;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+
+    a {
+      color: var(--yt-blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Global App Shell Header */
+    #app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--nav-h);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .yt-icon {
+      width: 26px;
+      height: 18px;
+      background: var(--yt-red);
+      border-radius: 5px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .yt-icon::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 10px;
+      border-style: solid;
+      border-width: 5px 0 5px 8px;
+      border-color: transparent transparent transparent #ffffff;
+    }
+
+    .badge-tag {
+      background: #f1f1f1;
+      color: var(--tx-sec);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* Master View Switcher */
+    .view-tabs {
+      display: inline-flex;
+      background: #ebebeb;
+      padding: 3px;
+      border-radius: 24px;
+    }
+
+    .view-tab-btn {
+      padding: 6px 18px;
+      border: 0;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--tx-sec);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .view-tab-btn.active {
+      background: #ffffff;
+      color: var(--tx);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Container Views */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    /* ==================== 1. DECK VIEW ==================== */
+    #deck-view {
+      min-height: calc(100vh - var(--nav-h));
+      position: relative;
+      padding-bottom: 70px;
+    }
+
+    .deck-slide {
+      display: none;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+      animation: slideFadeIn 0.25s ease-out;
+    }
+
+    .deck-slide.active {
+      display: block;
+    }
+
+    @keyframes slideFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .slide-category {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--yt-red-dark);
+      background: #ff00000f;
+      padding: 4px 12px;
+      border-radius: 16px;
+      margin-bottom: 14px;
+    }
+
+    .slide-title {
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      color: var(--tx);
+    }
+
+    .slide-subtitle {
+      font-size: clamp(16px, 2vw, 19px);
+      color: var(--tx-sec);
+      line-height: 1.5;
+      margin-bottom: 28px;
+      max-width: 860px;
+    }
+
+    /* Card Grids */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .card-grid.tri {
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    }
+
+    .deck-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      position: relative;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .deck-card.highlight {
+      border: 2px solid var(--yt-red);
+      background: #fffafa;
+    }
+
+    .deck-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .deck-card .metric-stat {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--tx);
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .deck-card .metric-stat.danger {
+      color: var(--yt-red-dark);
+    }
+
+    .deck-card .metric-stat.success {
+      color: var(--yt-green);
+    }
+
+    /* Impactful Bullet Lists */
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 12px;
+      color: #222;
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 8px;
+      color: var(--yt-red);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .bullet-list strong {
+      color: #0f0f0f;
+      font-weight: 600;
+    }
+
+    .bullet-subtext {
+      display: block;
+      font-size: 12.5px;
+      color: var(--tx-sec);
+      margin-top: 3px;
+    }
+
+    /* Comparison Box */
+    .versus-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .versus-col {
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .versus-col.bad {
+      border-top: 4px solid var(--yt-red);
+    }
+
+    .versus-col.good {
+      border-top: 4px solid var(--yt-green);
+    }
+
+    /* References Footer */
+    .deck-sources {
+      margin-top: 32px;
+      padding: 14px 18px;
+      background: #f1f1f1;
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--tx-sec);
+    }
+
+    .deck-sources strong {
+      color: var(--tx);
+    }
+
+    /* Deck Floating Dock Controls */
+    #deck-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 40;
+    }
+
+    .deck-progress-track {
+      position: absolute;
+      top: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #e2e2e2;
+    }
+
+    .deck-progress-fill {
+      height: 100%;
+      width: 11%;
+      background: var(--yt-red);
+      transition: width 0.25s ease;
+    }
+
+    .deck-btn {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .deck-btn:hover {
+      background: #f2f2f2;
+    }
+
+    .deck-btn.primary {
+      background: var(--yt-red);
+      color: #fff;
+      border-color: var(--yt-red);
+    }
+
+    .deck-btn.primary:hover {
+      background: var(--yt-red-dark);
+    }
+
+    .slide-indicator {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tx-sec);
+    }
+
+    /* ==================== 2. PROTOTYPE VIEW ==================== */
+    #proto-view {
+      min-height: calc(100vh - var(--nav-h));
+      background: #ffffff;
+    }
+
+    .proto-announcement {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 24px;
+      background: #f2f2f2;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .proto-mode-switch {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .proto-mode-switch button {
+      padding: 5px 16px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .proto-mode-switch button.active {
+      background: #0f0f0f;
+      color: #fff;
+    }
+
+    .proto-layout {
+      display: flex;
+      gap: 28px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .proto-side {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      border-radius: 20px;
+      padding: 24px;
+      background: linear-gradient(160deg, #442468 0%, #170d24 85%);
+      color: #ffffff;
+      align-self: flex-start;
+      position: sticky;
+      top: 76px;
+    }
+
+    .proto-cover {
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7442ad, #2f174e);
+      display: grid;
+      place-items: center;
+      font-size: 42px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .proto-side h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .proto-side p {
+      color: #d0c8dc;
+      font-size: 13px;
+      margin: 3px 0;
+    }
+
+    .proto-side-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .proto-side-btns button {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 24px;
+      border: 0;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-play-all {
+      background: #ffffff;
+      color: #0f0f0f;
+    }
+
+    .btn-shuffle {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .proto-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .proto-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .proto-select,
+    .proto-search {
+      background: var(--yt-chip);
+      border: 1px solid transparent;
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 13px;
+    }
+
+    .proto-search {
+      width: 220px;
+      outline: none;
+    }
+
+    .proto-search:focus {
+      background: #fff;
+      border-color: var(--yt-blue);
+      box-shadow: 0 0 0 2px rgba(6, 95, 212, 0.2);
+    }
+
+    .proto-btn {
+      background: var(--yt-chip);
+      border: 0;
+      border-radius: 18px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .proto-btn:hover {
+      background: var(--yt-chip-hover);
+    }
+
+    .proto-btn.primary {
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+
+    #chips-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+
+    #chips-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .proto-chip {
+      background: var(--yt-chip);
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .proto-chip:hover {
+      background: var(--yt-chip-hover);
+    }
+
+    .proto-chip.active {
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+
+    .chip-divider {
+      width: 1px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* Smart Nudge Banner */
+    #smart-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      background: #f0f7ff;
+      border: 1px solid #cce4ff;
+      margin-bottom: 14px;
+    }
+
+    #smart-banner span {
+      font-size: 13px;
+      color: #003a7a;
+    }
+
+    /* Sticky Bulk Action Bar */
+    #bulk-bar {
+      position: sticky;
+      top: calc(var(--nav-h) + 10px);
+      z-index: 20;
+      background: #0f0f0f;
+      color: #fff;
+      border-radius: 12px;
+      padding: 8px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    #bulk-bar span {
+      flex: 1;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    #bulk-bar button {
+      background: rgba(255, 255, 255, 0.18);
+      border: 0;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    #bulk-bar button:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    /* Video Rows */
+    .proto-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      position: relative;
+      transition: background 0.15s;
+    }
+
+    .proto-row:hover {
+      background: #f7f7f7;
+    }
+
+    .proto-row.selected {
+      background: #edf4fe;
+    }
+
+    .proto-checkbox {
+      width: 22px;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .proto-row:hover .proto-checkbox,
+    .proto-row.selected .proto-checkbox,
+    .in-bulk-mode .proto-checkbox {
+      opacity: 1;
+    }
+
+    .proto-thumb {
+      width: 156px;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .proto-thumb .proto-initial {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .proto-thumb .duration-badge {
+      position: absolute;
+      bottom: 4px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      font-size: 11px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .proto-thumb .progress-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: var(--yt-red);
+    }
+
+    .proto-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .proto-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .proto-info .sub {
+      font-size: 12px;
+      color: var(--tx-sec);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .proto-tag {
+      background: var(--yt-chip);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+    }
+
+    .proto-status {
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .proto-status.watched {
+      color: var(--yt-green);
+    }
+
+    .proto-status.started {
+      color: #b26a00;
+    }
+
+    .proto-status.unwatched {
+      color: var(--tx-muted);
+    }
+
+    .proto-row-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+    }
+
+    .proto-row:hover .proto-row-actions {
+      opacity: 1;
+    }
+
+    .proto-row-actions button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .proto-row-actions button:hover {
+      background: #e8e8e8;
+    }
+
+    /* Modal & Dialogs */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      place-items: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: grid;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-radio-option {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .modal-radio-option:hover {
+      border-color: #999;
+    }
+
+    .modal-radio-option input {
+      margin-top: 3px;
+    }
+
+    .modal-radio-option b {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .modal-radio-option small {
+      color: var(--tx-sec);
+      font-size: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    /* Toast */
+    #toast-box {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f0f0f;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      z-index: 120;
+      font-size: 13px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    #toast-box.show {
+      display: flex;
+    }
+
+    #toast-box button {
+      background: transparent;
+      border: 0;
+      color: #3ea6ff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Context Menu */
+    #menu-flyout {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 38px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+      padding: 6px 0;
+      min-width: 240px;
+      z-index: 30;
+      border: 1px solid var(--border);
+    }
+
+    #menu-flyout.open {
+      display: block;
+    }
+
+    #menu-flyout button {
+      width: 100%;
+      padding: 10px 16px;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      display: flex;
+      gap: 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    #menu-flyout button:hover {
+      background: #f2f2f2;
+    }
+
+    /* Current vs Proposed View Visibility */
+    body.mode-current .feature-proposed {
+      display: none !important;
+    }
+
+    body.mode-current .proto-checkbox {
+      display: none !important;
+    }
+
+    @media (max-width: 860px) {
+      .proto-layout {
+        flex-direction: column;
+      }
+
+      .proto-side {
+        width: 100%;
+        position: static;
+      }
+
+      .proto-thumb {
+        width: 120px;
+      }
+
+      .proto-search {
+        width: 140px;
+      }
+
+      .versus-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body class="mode-proposed">
+
+  <!-- Global Sticky Header Shell -->
+  <header id="app-header">
+    <div class="brand-group">
+      <span class="yt-icon"></span>
+      <span>YouTube Product Teardown</span>
+      <span class="badge-tag">Watch Later 2.0</span>
+    </div>
+
+    <div class="view-tabs">
+      <button class="view-tab-btn active" id="tab-deck-btn" onclick="switchView('deck')">
+        📑 Case Study Deck
+      </button>
+      <button class="view-tab-btn" id="tab-proto-btn" onclick="switchView('proto')">
+        ⚡ Live Interactive Prototype
+      </button>
+    </div>
+
+    <div>
+      <button class="deck-btn" onclick="jumpToPrototype()" style="font-size: 12px;">Try Prototype ↗</button>
+    </div>
+  </header>
+
+  <!-- ==================== VIEW A: PITCH DECK ==================== -->
+  <main id="deck-view" class="view-container active">
+
+    <!-- Slide 1: Cover & Hook -->
+    <section class="deck-slide active" data-slide="1">
+      <div class="slide-category">Product Strategy Teardown · Consumer Experience</div>
+      <h1 class="slide-title">Watch Later is a One-Way Door</h1>
+      <p class="slide-subtitle">How a tiny utility button turned into YouTube’s largest digital graveyard, why it hurts
+        YouTube’s recommendation flywheel, and how a 3-sided redesign unlocks dormant watch time.</p>
+
+      <div class="card-grid">
+        <div class="deck-card">
+          <h3>🚪 The One-Way Door Dilemma</h3>
+          <ul class="bullet-list">
+            <li><strong>Effortless Entry:</strong> 1 tap to save any video from home feed, search, or mobile player.
+            </li>
+            <li><strong>Friction-Heavy Exit:</strong> No bulk actions, no search, no safe cleanup. Removing 500 items
+              takes ~1,500 manual clicks.</li>
+            <li><strong>Outcome:</strong> Severe digital hoarding that converts high-intent queues into abandoned
+              backlogs.</li>
+          </ul>
+        </div>
+        <div class="deck-card highlight">
+          <h3>🎯 The Product Objective</h3>
+          <ul class="bullet-list">
+            <li><strong>Transform Watch Later</strong> from a static storage graveyard into an active high-intent
+              viewing queue.</li>
+            <li><strong>Protect YouTube’s RecSys</strong> by scrubbing stale signals from candidate generation neural
+              networks.</li>
+            <li><strong>Deliver 3-Sided Value:</strong> Measurable upside for Viewers, YouTube monetization, and
+              Creators.</li>
+          </ul>
+        </div>
+        <div class="deck-card">
+          <h3>👤 Product Teardown Author</h3>
+          <ul class="bullet-list">
+            <li><strong>Perspective:</strong> Senior Product Manager / Platform Experience Teardown.</li>
+            <li><strong>Focus Areas:</strong> Recommendation Systems, Cognitive Load, Algorithmic Hygiene, Retention.
+            </li>
+            <li><strong>Deliverables:</strong> Data research, algorithmic impact model, and fully functional interactive
+              prototype.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deck-sources">
+        💡 <em>Tip: Use your <strong>Left / Right Arrow keys</strong> or the bottom bar buttons to navigate slides.
+          Switch to the prototype at any time.</em>
+      </div>
+    </section>
+
+    <!-- Slide 2: The Spark - Personal Experience -->
+    <section class="deck-slide" data-slide="2">
+      <div class="slide-category">1 · The Spark & Personal Discovery</div>
+      <h2 class="slide-title">700 Videos, 7 Years, Zero Curation</h2>
+      <p class="slide-subtitle">The problem started with my own account—a personal realization that exposed a massive
+        platform-level blind spot.</p>
+
+      <div class="card-grid">
+        <div class="deck-card highlight">
+          <div class="metric-stat danger">700+</div>
+          <h3>Videos Trapped in My Queue</h3>
+          <ul class="bullet-list">
+            <li><strong>The discovery:</strong> Scrolling through my personal Watch Later list, I hit an endless wall of
+              over 700 accumulated saves.</li>
+            <li><strong>The timeline:</strong> The oldest video was saved in <strong>2019—7 years ago</strong>. My
+              tastes, career, and life stage had completely changed.</li>
+            <li><strong>The surprise:</strong> Over 40% of the videos had the red playback bar filled—meaning
+              <strong>they were already watched</strong>.
+            </li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <div class="metric-stat danger">0</div>
+          <h3>Filters to Tidy the List</h3>
+          <ul class="bullet-list">
+            <li><strong>Zero Status Filters:</strong> No toggle to filter by "Watched", "Started", or "Unwatched".</li>
+            <li><strong>Zero Duration Slicing:</strong> No way to say: <em>"I have 15 minutes before lunch, show me
+                videos under 15 min."</em></li>
+            <li><strong>Zero Bulk Management:</strong> No multi-select checkboxes or batch removal in the consumer
+              interface.</li>
+            <li><strong>The blunt button danger:</strong> The native "Remove watched videos" deletes partially watched
+              videos (even at 5% watched) without warning or undo!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deck-card" style="margin-top: 14px;">
+        <h3>🧠 The Cognitive Psychology Shift: From "Bookmark" to "Guilt Graveyard"</h3>
+        <ul class="bullet-list">
+          <li><strong>Open-Loop Burden:</strong> In product psychology (Zeigarnik Effect), unfinished tasks demand
+            continuous cognitive energy. An unkempt 700-video queue creates subconscious dread rather than delight.</li>
+          <li><strong>The Decision Paradox (Hick’s Law):</strong> When a user has 15 minutes to relax, opening a
+            disorganized list of 700 diverse topics causes cognitive fatigue, forcing them to bounce back to mindless
+            short-form scrolling.</li>
+          <li><strong>Broken Trust:</strong> Users stop saving because they know whatever enters Watch Later will never
+            be found again.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Slide 3: Market Evidence & Revealed Demand -->
+    <section class="deck-slide" data-slide="3">
+      <div class="slide-category">2 · Market Reality & Revealed Demand</div>
+      <h2 class="slide-title">A Giant Surface with Heavy-User Friction</h2>
+      <p class="slide-subtitle">This isn't an isolated edge case. Millions of heavy, high-value users are hitting hard
+        system constraints and building desperate workarounds.</p>
+
+      <div class="card-grid">
+        <div class="deck-card">
+          <div class="metric-stat">~2.7B</div>
+          <h3>Monthly Active Users</h3>
+          <ul class="bullet-list">
+            <li>YouTube's global logged-in audience base.</li>
+            <li><a href="https://datareportal.com/essential-youtube-stats" target="_blank" rel="noopener">India alone
+                accounts for ~491M+ users</a>, making it the largest single market.</li>
+            <li>Saving videos is one of YouTube's primary explicit actions.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card highlight">
+          <div class="metric-stat danger">5,000</div>
+          <h3>Hard Video Cap Limit</h3>
+          <ul class="bullet-list">
+            <li>YouTube enforces a <a href="https://tidywl.com/blog/youtube-watch-later-5000-limit/" target="_blank"
+                rel="noopener">hard limit of 5,000 videos</a> on the Watch Later playlist.</li>
+            <li>When power users hit 5,000, <strong>all saves silently fail</strong> or throw playlist errors.</li>
+            <li>Documented by independent developers and community threads (<a
+                href="https://hunted.space/product/youtube-watch-later-tidy" target="_blank" rel="noopener">Watch Later
+                Tidy</a> &amp; <a href="https://droidwin.com/?p=49156" target="_blank" rel="noopener">Droidwin
+                Fixes</a>).</li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <div class="metric-stat">500–2K</div>
+          <h3>Common Bloat Range</h3>
+          <ul class="bullet-list">
+            <li>Real user logs cite lists with <a
+                href="https://brainwagon.org/blog/2026-07-23-714-videos-in-watch-later-and-no-good-way-to-delete-them"
+                target="_blank" rel="noopener">714 videos</a>, 1,100 videos, and 2,000+ items.</li>
+            <li>Power consumers (subscribers & heavy viewers) suffer the highest friction.</li>
+            <li>Case studies documented since 2021 (<a
+                href="https://suggest-design.webflow.io/case-study/youtube-improve-watch-later-list" target="_blank"
+                rel="noopener">Suggest.design Case Study</a>).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deck-card">
+        <h3>🛠 Revealed Demand: The Community is Building Third-Party Fixes</h3>
+        <ul class="bullet-list">
+          <li><strong>Third-Party Browser Extensions:</strong> Tools like <a
+              href="https://chromewebstore.google.com/detail/manfgonogmkclmmickphglhlmdokplfk" target="_blank"
+              rel="noopener">WatchTool</a> and <a href="https://extscope.org/extension/lkehhleajngcninebpligjkeodlhhjld"
+              target="_blank" rel="noopener">Bulk Delete for YouTube</a> exist solely to provide search and
+            multi-delete.</li>
+          <li><strong>Friction Calculation:</strong> For a modest 500-video queue, manual one-by-one deletion requires
+            <strong>~1,500 manual clicks</strong> (Menu &gt; Remove &gt; Confirm) vs <strong>~4 clicks</strong> with
+            smart clean-up.
+          </li>
+          <li><strong>Security & Privacy Hazard:</strong> Viewers are granting third-party Chrome extensions broad
+            YouTube account access just to clean their playlists!</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Slide 4: Algorithmic & Systems Breakdown -->
+    <section class="deck-slide" data-slide="4">
+      <div class="slide-category">3 · RecSys & Systems Architecture</div>
+      <h2 class="slide-title">How YouTube Uses Watch Later & Why Bloat Breaks It</h2>
+      <p class="slide-subtitle">Watch Later isn't just a UI list; it is a high-weight positive training signal inside
+        YouTube's two-stage recommendation engine.</p>
+
+      <div class="versus-grid">
+        <div class="versus-col bad">
+          <h3 style="color: var(--yt-red-dark); margin-bottom: 12px;">⚠️ The Algorithmic Danger of Stale Bloat</h3>
+          <ul class="bullet-list">
+            <li><strong>Ghost Intent in Candidate Generation:</strong> Inside YouTube's DNN (as detailed in <a
+                href="https://research.google/pubs/deep-neural-networks-for-youtube-recommendations/" target="_blank"
+                rel="noopener">Covington et al., 2016</a>), explicit "Add to Watch Later" actions are heavily weighted
+              positive candidate vectors. A save from 7 years ago continues injecting outdated topic embeddings into
+              candidate generation.</li>
+            <li><strong>Noise in User State Embeddings:</strong> When 300 out of 700 saved items are already finished or
+              obsolete, the system fails to determine active, in-the-moment interest.</li>
+            <li><strong>Cannibalized Recommendation Diversity:</strong> Stale backlog topics repeatedly pollute the Home
+              Feed recommendations because the ranking model assumes unsatisfied intent.</li>
+            <li><strong>Client Memory & Network Overhead:</strong> Rendering lists of 2,000+ videos with dynamic watch
+              progress markers creates severe DOM and memory lag on mid-tier mobile devices.</li>
+          </ul>
+        </div>
+
+        <div class="versus-col good">
+          <h3 style="color: var(--yt-green); margin-bottom: 12px;">✨ The RecSys Upside of a Tidy Queue</h3>
+          <ul class="bullet-list">
+            <li><strong>High-Fidelity Intent Signals:</strong> A cleaned, active Watch Later list reflects what the user
+              actually wants to consume <em>this week</em>, sharpening candidate retrieval precision.</li>
+            <li><strong>Higher Session Start Conversion:</strong> Turning an intimidating 700-item graveyard into a
+              filtered 15-minute queue directly increases session initiation.</li>
+            <li><strong>Clean Feedback Loop:</strong> Clear demarcation between "Finished ($\ge 90\%$)", "In Progress
+              (5–89%)", and "Never Started" provides crisp negative/positive feedback for reinforcement learning models.
+            </li>
+            <li><strong>Reduced Dead State Storage:</strong> Purging zombie videos (deleted, privated, or
+              region-restricted) relieves database indexing load across hundreds of millions of user accounts.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: The 3-Sided Value Exchange -->
+    <section class="deck-slide" data-slide="5">
+      <div class="slide-category">4 · Strategic PM Business Case</div>
+      <h2 class="slide-title">The 3-Sided Win-Win-Win Value Exchange</h2>
+      <p class="slide-subtitle">A great product enhancement must generate compounded value across all three primary
+        stakeholders: The Platform, The Viewer, and The Creator.</p>
+
+      <div class="card-grid tri">
+        <!-- 1. YouTube Platform -->
+        <div class="deck-card">
+          <h3 style="color: var(--yt-red-dark);">🏢 1. For YouTube (Platform)</h3>
+          <ul class="bullet-list">
+            <li><strong>Unlocks Dormant Watch Time:</strong> Converts billions of saved but abandoned video hours into
+              completed watch sessions, directly driving pre-roll and mid-roll ad monetization.</li>
+            <li><strong>Higher Premium Retention:</strong> High-intent curation is a core value driver for YouTube
+              Premium subscribers who rely on YouTube for educational & deep-dive content.</li>
+            <li><strong>Accurate Training Data:</strong> Removes 7-year-old stale vectors, improving recommendation
+              precision and user session depth platform-wide.</li>
+            <li><strong>Eliminates Security Risks:</strong> Stops users from delegating API access to rogue third-party
+              bulk-delete extensions.</li>
+          </ul>
+        </div>
+
+        <!-- 2. Viewers -->
+        <div class="deck-card">
+          <h3 style="color: var(--yt-blue);">👥 2. For Viewers (Consumers)</h3>
+          <ul class="bullet-list">
+            <li><strong>Zero Cognitive Overload:</strong> Instant topic chips (Tech, Finance, Cooking) and quick filters
+              ("Under 20 min") match the user's immediate time budget and mood.</li>
+            <li><strong>Safe, Transparent Clean-Up:</strong> Clear separation between <em>Finished ($\ge 90\%$)</em> and
+              <em>In-Progress</em>, with preview confirmation and 1-tap Undo.
+            </li>
+            <li><strong>Bulk Productivity:</strong> Multi-select, Shift-click range select, and instant batch operations
+              reduce cleanup time from 20 minutes to 5 seconds.</li>
+            <li><strong>Elimination of the 5,000 Cap Wall:</strong> Users never experience silent save rejections or
+              locked playlists again.</li>
+          </ul>
+        </div>
+
+        <!-- 3. Creators -->
+        <div class="deck-card">
+          <h3 style="color: var(--yt-green);">🎬 3. For Creators (Channel Owners)</h3>
+          <ul class="bullet-list">
+            <li><strong>Evergreen Backlog Revival:</strong> Long-form educational and documentary videos (which users
+              often save for weekend study) actually get watched instead of rotting in digital graveyards.</li>
+            <li><strong>Higher Video Completion Rate:</strong> Viewers watching with intentionality rather than chaotic
+              autoplay finish videos, dramatically boosting creator Audience Retention curves.</li>
+            <li><strong>Fairer Algorithm Credit:</strong> Videos gain active views, comments, and ad revenue months
+              after launch as users filter their backlog by relevant topics.</li>
+            <li><strong>Direct Playlist Migration:</strong> Viewers can easily batch-move videos from Watch Later into
+              custom named playlists (e.g., "Web Dev", "Gym Routine").</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: The Proposed Solution -->
+    <section class="deck-slide" data-slide="6">
+      <div class="slide-category">5 · Product Specification</div>
+      <h2 class="slide-title">Watch Later 2.0: Core Product Pillars</h2>
+      <p class="slide-subtitle">We designed four modular, reversible controls that mirror patterns proven across Google
+        products (Gmail, YouTube Studio, Photos).</p>
+
+      <div class="card-grid">
+        <div class="deck-card">
+          <h3>1. 🧹 Smart Clean-Up with Threshold Logic</h3>
+          <ul class="bullet-list">
+            <li><strong>Replaces the blunt "Remove watched":</strong> Explicitly defines watched as $\ge 90\%$
+              completion.</li>
+            <li><strong>Preview Before Commit:</strong> Modal clearly states how many finished vs partially started
+              videos exist.</li>
+            <li><strong>Proactive Smart Banner:</strong> Alerts the user when 20+ completed videos are hogging list
+              space.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <h3>2. 🏷️ Dynamic Topic & Duration Chips</h3>
+          <ul class="bullet-list">
+            <li><strong>Algorithmic Auto-Clustering:</strong> Auto-groups saves into high-level categories (Tech,
+              Cooking, Fitness, etc.).</li>
+            <li><strong>"Under 20 min" Quick Filter:</strong> Perfect for micro-commutes and meal breaks.</li>
+            <li><strong>"Started, not finished":</strong> Instantly resume high-intent half-watched videos.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <h3>3. ☑️ Desktop & Mobile Multi-Select</h3>
+          <ul class="bullet-list">
+            <li><strong>Checkbox Bulk Selection:</strong> Click or Shift+Click to highlight batches.</li>
+            <li><strong>Batch Actions:</strong> One-click Delete, Move to Playlist, or Clear.</li>
+            <li><strong>In-List Search:</strong> Real-time keyword filter across video titles and channel names.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <h3>4. ↩️ Non-Destructive Undo Safety Net</h3>
+          <ul class="bullet-list">
+            <li><strong>10-Second Toast Recovery:</strong> Removes anxiety; users can test cleanup fearlessly.</li>
+            <li><strong>Soft-Delete Buffer:</strong> Prevents permanent loss from accidental tap slips.</li>
+            <li><strong>Aligned with Material 3 Guidelines:</strong> Seamless consistency with Gmail and Drive.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <button class="deck-btn primary" onclick="jumpToPrototype()" style="padding: 12px 28px; font-size: 15px;">
+          ⚡ Launch Interactive Prototype (Watch Later 2.0) →
+        </button>
+      </div>
+    </section>
+
+    <!-- Slide 7: Alignment with YouTube Core Vision -->
+    <section class="deck-slide" data-slide="7">
+      <div class="slide-category">6 · Corporate Vision & Strategic Alignment</div>
+      <h2 class="slide-title">Aligning with YouTube’s Core North Star</h2>
+      <p class="slide-subtitle">How fixing a "janitorial" feature directly advances YouTube's mission to give everyone a
+        voice and connect people with the world.</p>
+
+      <div class="card-grid">
+        <div class="deck-card">
+          <h3>🎯 YouTube's Core Mission</h3>
+          <p style="font-size: 15px; color: var(--tx-sec); margin-bottom: 12px; font-style: italic;">
+            "To give everyone a voice and show them the world."
+          </p>
+          <ul class="bullet-list">
+            <li><strong>Curiosity to Consumption:</strong> YouTube succeeds when viewers satisfy genuine curiosity. When
+              the gateway between curiosity (saving) and consumption (watching) gets clogged, user satisfaction drops.
+            </li>
+            <li><strong>Respecting Human Time:</strong> YouTube's Responsible AI and Well-being initiatives (bedtime
+              reminders, take a break prompts) acknowledge the need to help viewers manage attention intentionally
+              rather than passively.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card highlight">
+          <h3>🧭 The Shift from Storage to Velocity</h3>
+          <ul class="bullet-list">
+            <li><strong>Old Metric Focus:</strong> Raw count of items added to Watch Later (vanity hoarding).</li>
+            <li><strong>New Metric Focus:</strong> <em>Velocity of Consumption</em>—how quickly a saved idea converts
+              into viewed knowledge.</li>
+            <li><strong>Ecosystem Health:</strong> Creators spend weeks crafting high-production 45-minute essays. Watch
+              Later 2.0 ensures those essays don't get suffocated by short-form noise.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deck-card" style="margin-top: 14px;">
+        <h3>📊 The PM Experimentation Scorecard (A/B Test Design)</h3>
+        <div class="versus-grid" style="margin: 10px 0 0;">
+          <div>
+            <strong>Primary North Star Metric:</strong>
+            <p style="font-size: 13px; color: var(--tx-sec); margin-top: 4px;">Watch Later Conversion Rate: % of saved
+              videos watched within 30 days of addition.</p>
+          </div>
+          <div>
+            <strong>Guardrail Metrics:</strong>
+            <p style="font-size: 13px; color: var(--tx-sec); margin-top: 4px;">Total Save Volume (ensuring cleanup
+              doesn't discourage saves) and Undo Rate (&lt; 2%).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: PM Learnings & Conclusion -->
+    <section class="deck-slide" data-slide="8">
+      <div class="slide-category">7 · Product Learnings & Conclusion</div>
+      <h2 class="slide-title">Key Learnings & Future Roadmap</h2>
+      <p class="slide-subtitle">Critical takeaways from investigating a micro-interaction with macro-platform
+        implications.</p>
+
+      <div class="card-grid">
+        <div class="deck-card">
+          <h3>🧠 1. Revealed Demand Is Everywhere</h3>
+          <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 8px;">
+            When users install untrusted browser extensions and write Python scripts to manage a list, product managers
+            don't need to guess if demand exists—it is screaming in user forums.
+          </p>
+        </div>
+
+        <div class="deck-card">
+          <h3>🚪 2. Respect Both Sides of the Door</h3>
+          <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 8px;">
+            Optimizing for 1-click frictionless entry without building a proportional exit path inevitably produces
+            toxic digital debt and user anxiety.
+          </p>
+        </div>
+
+        <div class="deck-card">
+          <h3>🛡️ 3. Friction Comes From Lack of Safety</h3>
+          <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 8px;">
+            Users weren't refusing to clean their lists because they loved hoarding; they refused because the existing
+            "Remove watched" tool was unpredictable and irreversible.
+          </p>
+        </div>
+
+        <div class="deck-card">
+          <h3>🔄 4. Features & Algorithms Are Coupled</h3>
+          <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 8px;">
+            Client UI design directly impacts ML model training data. Clean interfaces create clean user behavioral
+            signals, which produce superior recommendations.
+          </p>
+        </div>
+      </div>
+
+      <div class="deck-card highlight" style="margin-top: 14px;">
+        <h3>🚀 Next PM Iterations: Watch Later 3.0 Roadmap</h3>
+        <ul class="bullet-list">
+          <li><strong>Smart Auto-Archive:</strong> Offer users an opt-in setting: <em>"Automatically move finished
+              videos to History after 7 days."</em></li>
+          <li><strong>Contextual Home Prompts:</strong> Surface a mini-carousel on Saturday morning: <em>"You have 3
+              long-form videos saved for the weekend."</em></li>
+          <li><strong>Cross-Platform Parity:</strong> Bring the multi-select and duration chip engine to the YouTube
+            Living Room (TV) app for effortless evening queuing.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Slide Dock Controls -->
+    <footer id="deck-nav-bar">
+      <div class="deck-progress-track">
+        <div class="deck-progress-fill" id="deck-progress-fill"></div>
+      </div>
+      <button class="deck-btn" id="btn-prev-slide" onclick="changeSlide(-1)">← Previous</button>
+      <div class="slide-indicator" id="slide-indicator">Slide 1 of 8</div>
+      <button class="deck-btn primary" id="btn-next-slide" onclick="changeSlide(1)">Next Slide →</button>
+    </footer>
+  </main>
+
+
+  <!-- ==================== VIEW B: LIVE PROTOTYPE ==================== -->
+  <section id="proto-view" class="view-container">
+
+    <!-- Sub-header Mode Banner -->
+    <div class="proto-announcement">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 600;">Prototype Environment:</span>
+        <div class="proto-mode-switch">
+          <button id="mode-curr-btn" onclick="setProtoMode('current')">Current YouTube</button>
+          <button id="mode-prop-btn" class="active" onclick="setProtoMode('proposed')">Proposed Watch Later 2.0</button>
+        </div>
+      </div>
+      <div class="feature-proposed" style="font-size: 12.5px; color: var(--tx-sec);">
+        ✨ Active Features: Multi-select, Smart Clean-up, Topic & Duration filters, In-list Search, Undo.
+      </div>
+      <div>
+        <button class="deck-btn" onclick="switchView('deck')" style="font-size: 12px;">Back to Deck 📑</button>
+      </div>
+    </div>
+
+    <div class="proto-layout">
+      <!-- Left Playlist Meta Panel -->
+      <aside class="proto-side">
+        <div class="proto-cover">▶</div>
+        <h1>Watch later</h1>
+        <p>Pavitra Poojary · Private</p>
+        <p id="proto-count-label">460 videos · 38 hours</p>
+        <p style="color: #bfb4cf;">Updated today · No public views</p>
+        <div class="proto-side-btns">
+          <button class="btn-play-all">▶ Play all</button>
+          <button class="btn-shuffle">⤮ Shuffle</button>
+        </div>
+      </aside>
+
+      <!-- Main Video Feed Panel -->
+      <div class="proto-main">
+        <!-- Search & Sorting Toolbar -->
+        <div class="proto-toolbar">
+          <select id="proto-sort-select" class="proto-select" onchange="onSortChange(this.value)">
+            <option value="manual">Sort: Manual</option>
+            <option value="newest">Date added (newest)</option>
+            <option value="oldest">Date added (oldest)</option>
+            <option value="popular">Most popular</option>
+            <option value="shortest" class="feature-proposed">Shortest first (New)</option>
+            <option value="progress" class="feature-proposed">Most watched (New)</option>
+          </select>
+
+          <input type="text" id="proto-search-input" class="proto-search feature-proposed"
+            placeholder="Search this list..." oninput="onSearchInput(this.value)">
+
+          <div style="flex: 1;"></div>
+
+          <button class="proto-btn feature-proposed" id="btn-select-all-view" onclick="toggleSelectAllInView()">
+            ☑ Select all
+          </button>
+
+          <div style="position: relative;">
+            <button class="proto-btn" id="proto-dots-menu-btn" onclick="toggleMenu(event)"
+              aria-label="More actions">⋮</button>
+            <div id="menu-flyout">
+              <button onclick="triggerToast('Not in prototype demo')"><span>👁</span> Show unavailable videos</button>
+              <button onclick="triggerToast('Add videos dialog')"><span>＋</span> Add videos</button>
+              <button onclick="triggerToast('Add all to playlist')"><span>🔖</span> Add all to...</button>
+              <button onclick="openCleanModal('current')" id="menu-curr-clean"><span>⊖</span> Remove watched
+                videos</button>
+              <button onclick="openCleanModal('proposed')" id="menu-prop-clean" class="feature-proposed"
+                style="color: var(--yt-red-dark); font-weight: 600;">
+                <span>🧹</span> Smart clean-up... <span class="badge-tag">NEW</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category & Duration Filter Chips -->
+        <div id="chips-bar">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Smart Nudge Banner -->
+        <div id="smart-banner" class="feature-proposed">
+          <span id="smart-banner-text">💡 <strong>0 videos</strong> you've completed are still saved here. Clean them to
+            keep unfinished ones.</span>
+          <button class="proto-btn" onclick="reviewFinishedBatch()">Review & Clean</button>
+        </div>
+
+        <!-- Floating Bulk Action Bar -->
+        <div id="bulk-bar" class="feature-proposed" style="display: none;">
+          <input type="checkbox" id="bulk-master-check" onchange="toggleSelectAllInView()" checked>
+          <span id="bulk-count-label">0 selected</span>
+          <button onclick="deleteSelected()">🗑 Remove selected</button>
+          <button onclick="triggerToast('Playlist picker opened')">＋ Add to playlist</button>
+          <button onclick="clearSelection()">Clear selection</button>
+        </div>
+
+        <!-- Dynamic Video List Container -->
+        <div id="proto-video-list">
+          <!-- Videos injected via JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cleanup Scope Modal -->
+  <div class="modal-overlay" id="cleanup-modal">
+    <div class="modal-card" id="cleanup-modal-content">
+      <!-- Populated dynamically based on Current vs Proposed mode -->
+    </div>
+  </div>
+
+  <!-- Bottom Toast Notification with Undo -->
+  <div id="toast-box">
+    <span id="toast-text">Notice</span>
+    <button id="toast-undo-btn" onclick="performUndo()" style="display: none;">UNDO</button>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. CORE APP STATE & VIEW MANAGEMENT
+       ========================================================================= */
+    let currentView = 'deck'; // 'deck' | 'proto'
+    let currentSlide = 1;
+    const totalSlides = 8;
+
+    function switchView(viewName) {
+      currentView = viewName;
+      document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.view-tab-btn').forEach(el => el.classList.remove('active'));
+
+      if (viewName === 'deck') {
+        document.getElementById('deck-view').classList.add('active');
+        document.getElementById('tab-deck-btn').classList.add('active');
+      } else {
+        document.getElementById('proto-view').classList.add('active');
+        document.getElementById('tab-proto-btn').classList.add('active');
+        renderPrototype();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function jumpToPrototype() {
+      switchView('proto');
+      setProtoMode('proposed');
+    }
+
+    /* Slide Deck Controls */
+    function changeSlide(direction) {
+      currentSlide += direction;
+      if (currentSlide < 1) currentSlide = 1;
+      if (currentSlide > totalSlides) currentSlide = totalSlides;
+      updateSlideUI();
+    }
+
+    function updateSlideUI() {
+      document.querySelectorAll('.deck-slide').forEach(slide => {
+        const sIndex = parseInt(slide.getAttribute('data-slide'), 10);
+        slide.classList.toggle('active', sIndex === currentSlide);
+      });
+      document.getElementById('slide-indicator').textContent = `Slide ${currentSlide} of ${totalSlides}`;
+      const pct = (currentSlide / totalSlides) * 100;
+      document.getElementById('deck-progress-fill').style.width = `${pct}%`;
+
+      document.getElementById('btn-prev-slide').style.visibility = (currentSlide === 1) ? 'hidden' : 'visible';
+      document.getElementById('btn-next-slide').textContent = (currentSlide === totalSlides) ? 'Try Prototype ⚡' : 'Next Slide →';
+
+      if (currentSlide === totalSlides) {
+        document.getElementById('btn-next-slide').onclick = () => jumpToPrototype();
+      } else {
+        document.getElementById('btn-next-slide').onclick = () => changeSlide(1);
+      }
+    }
+
+    // Global Keyboard Navigation for Slides
+    window.addEventListener('keydown', (e) => {
+      // Ignore keys if interacting with inputs/selects in prototype
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (currentView === 'deck') {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          if (currentSlide < totalSlides) changeSlide(1);
+          else jumpToPrototype();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          changeSlide(-1);
+        }
+      }
+    });
+
+    /* =========================================================================
+       2. PROTOTYPE DATA ENGINE (~460 Mock Videos & Multi-Category Logic)
+       ========================================================================= */
+    const TOPIC_VOCAB = {
+      Tech: ["Microservices Architecture", "Kubernetes Cluster Setup", "Rust vs Go in 2026", "Building LLM Agents", "Vector Databases", "System Design: WhatsApp", "Advanced SQL Joins", "React Server Components", "OAuth 2.0 Explained", "Linux Kernel Basics"],
+      Finance: ["Index Fund Investing Strategy", "Direct SIP vs Regular MF", "Capital Gains Tax Explained", "Understanding Sovereign Gold Bonds", "Real Estate vs Equity Returns", "Reading Corporate Balance Sheets", "Inflation Hedging", "Emergency Fund Allocation"],
+      Cooking: ["Authentic Sourdough Bread", "High-Protein Vegetarian Dinners", "Mastering 5 French Mother Sauces", "Creamy Butter Chicken Step-by-Step", "Perfect Neapolitan Pizza at Home", "Quick 15-Minute Meal Prep", "Traditional South Indian Filter Coffee"],
+      Fitness: ["Proper Deadlift Biomechanics", "Fixing Anterior Pelvic Tilt", "HIIT vs Zone 2 Cardio", "Full Body Mobility Routine", "Running Cadence Optimization", "Shoulder Impingement Rehab", "Science of Hypertrophy"],
+      Product: ["Writing Great PRDs", "North Star Metric Frameworks", "Running Unbiased User Interviews", "Cohort Retention Curves", "Product Sense Case: Spotify", "Prioritization Frameworks: RICE vs Kano", "Designing Conversion Funnels"]
+    };
+
+    const CHANNELS = {
+      Tech: ["Fireship", "TechLead", "ByteByteGo", "Computerphile", "freeCodeCamp"],
+      Finance: ["Akshat Shrivastava", "Plain Bagel", "Graham Stephan", "Finshots TV"],
+      Cooking: ["Binging with Babish", "Kenji López-Alt", "Your Food Lab", "Joshua Weissman"],
+      Fitness: ["Jeff Nippard", "Athlean-X", "Renaissance Periodization", "Squat University"],
+      Product: ["Lenny's Podcast", "Reforge Talks", "Product School", "Y Combinator"]
+    };
+
+    // Deterministic Pseudo-Random Generator
+    let seed = 42;
+    function pseudoRandom() {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    }
+
+    const CATEGORIES = ["All", "Tech", "Finance", "Cooking", "Fitness", "Product"];
+    const rawVideos = [];
+
+    // Generate 460 videos with varied dates (up to 7 years ago), durations, and progress percentages
+    for (let i = 0; i < 460; i++) {
+      const catKeys = Object.keys(TOPIC_VOCAB);
+      const cat = catKeys[Math.floor(pseudoRandom() * catKeys.length)];
+      const titleList = TOPIC_VOCAB[cat];
+      const chanList = CHANNELS[cat];
+
+      const titleBase = titleList[Math.floor(pseudoRandom() * titleList.length)];
+      const titleSuffix = [" - Full Masterclass", " in 15 Minutes", " Explained Simply", " Crash Course", " (2026 Guide)"][Math.floor(pseudoRandom() * 5)];
+      const channel = chanList[Math.floor(pseudoRandom() * chanList.length)];
+
+      // Days added: from 1 day to 2,550 days (~7 years)
+      const daysAgo = Math.floor(Math.pow(pseudoRandom(), 1.5) * 2550) + 1;
+      const durationMin = Math.floor(pseudoRandom() * 55) + 3; // 3 to 58 mins
+
+      // Progress distribution:
+      // 45% unwatched (0%), 35% finished (90-100%), 20% in-progress (10-85%)
+      const pRoll = pseudoRandom();
+      let progress = 0;
+      if (pRoll > 0.65) {
+        progress = 100;
+      } else if (pRoll > 0.45) {
+        progress = Math.floor(pseudoRandom() * 10) + 90;
+      } else if (pRoll > 0.25) {
+        progress = Math.floor(pseudoRandom() * 75) + 10;
+      }
+
+      rawVideos.push({
+        id: i + 1,
+        title: titleBase + titleSuffix,
+        category: cat,
+        channel: channel,
+        daysAgo: daysAgo,
+        duration: durationMin,
+        progress: progress,
+        views: Math.floor(pseudoRandom() * 2400000) + 15000,
+        hue: Math.floor((i * 47) % 360)
+      });
+    }
+
+    // Working prototype dataset
+    let playlistItems = [...rawVideos];
+    let selectedIds = new Set();
+    let lastSelectedId = null;
+    let lastDeletedBatch = null;
+    let toastTimeout = null;
+
+    let protoFilter = {
+      category: "All",
+      under20Only: false,
+      inProgressOnly: false,
+      searchQuery: "",
+      sortBy: "manual"
+    };
+
+    let isProposedMode = true;
+
+    function setProtoMode(mode) {
+      isProposedMode = (mode === 'proposed');
+      document.body.classList.toggle('mode-proposed', isProposedMode);
+      document.body.classList.toggle('mode-current', !isProposedMode);
+      document.getElementById('mode-prop-btn').classList.toggle('active', isProposedMode);
+      document.getElementById('mode-curr-btn').classList.toggle('active', !isProposedMode);
+
+      // Reset active selections on mode toggle
+      selectedIds.clear();
+      renderPrototype();
+    }
+
+    function onSortChange(val) {
+      protoFilter.sortBy = val;
+      renderPrototype();
+    }
+
+    function onSearchInput(val) {
+      protoFilter.searchQuery = val.trim().toLowerCase();
+      renderPrototype();
+    }
+
+    function formatDaysAgo(d) {
+      if (d < 30) return `${d} day${d === 1 ? '' : 's'} ago`;
+      if (d < 365) return `${Math.floor(d / 30)} months ago`;
+      const yrs = (d / 365).toFixed(1);
+      return `${yrs} years ago`;
+    }
+
+    function formatViews(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M views';
+      return Math.floor(n / 1000) + 'K views';
+    }
+
+    function getFilteredList() {
+      return playlistItems.filter(v => {
+        if (!isProposedMode) return true; // Current mode has no filtering capabilities
+
+        if (protoFilter.category !== 'All' && v.category !== protoFilter.category) return false;
+        if (protoFilter.under20Only && v.duration > 20) return false;
+        if (protoFilter.inProgressOnly && (v.progress <= 0 || v.progress >= 90)) return false;
+        if (protoFilter.searchQuery) {
+          const match = (v.title + ' ' + v.channel + ' ' + v.category).toLowerCase();
+          if (!match.includes(protoFilter.searchQuery)) return false;
+        }
+        return true;
+      }).sort((a, b) => {
+        switch (protoFilter.sortBy) {
+          case 'newest': return a.daysAgo - b.daysAgo;
+          case 'oldest': return b.daysAgo - a.daysAgo;
+          case 'popular': return b.views - a.views;
+          case 'shortest': return a.duration - b.duration;
+          case 'progress': return b.progress - a.progress;
+          default: return a.id - b.id; // Manual insertion order
+        }
+      });
+    }
+
+    function renderChips() {
+      const bar = document.getElementById('chips-bar');
+      if (!isProposedMode) {
+        bar.innerHTML = `
+      <button class="proto-chip active">All</button>
+      <button class="proto-chip">Videos</button>
+      <button class="proto-chip">Shorts</button>
+    `;
+        return;
+      }
+
+      let html = CATEGORIES.map(c => `
+    <button class="proto-chip ${protoFilter.category === c ? 'active' : ''}" onclick="selectCategory('${c}')">
+      ${c}
+    </button>
+  `).join('');
+
+      html += `<span class="chip-divider"></span>`;
+      html += `
+    <button class="proto-chip ${protoFilter.under20Only ? 'active' : ''}" onclick="toggleQuickFilter('under20')">
+      ⏱ Under 20 min
+    </button>
+    <button class="proto-chip ${protoFilter.inProgressOnly ? 'active' : ''}" onclick="toggleQuickFilter('inProgress')">
+      ⏸ Started, not finished
+    </button>
+  `;
+      bar.innerHTML = html;
+    }
+
+    function selectCategory(cat) {
+      protoFilter.category = cat;
+      renderPrototype();
+    }
+
+    function toggleQuickFilter(type) {
+      if (type === 'under20') protoFilter.under20Only = !protoFilter.under20Only;
+      if (type === 'inProgress') protoFilter.inProgressOnly = !protoFilter.inProgressOnly;
+      renderPrototype();
+    }
+
+    function renderPrototype() {
+      renderChips();
+      const filtered = getFilteredList();
+
+      const finishedCount = playlistItems.filter(x => x.progress >= 90).length;
+      const inProgressCount = playlistItems.filter(x => x.progress > 0 && x.progress < 90).length;
+
+      // Update counts
+      document.getElementById('proto-count-label').textContent = `${playlistItems.length} videos · Updated today`;
+      document.getElementById('btn-select-all-view').textContent = `☑ Select all ${filtered.length}`;
+
+      // Smart Banner
+      const smartBanner = document.getElementById('smart-banner');
+      if (finishedCount > 0 && isProposedMode) {
+        smartBanner.style.display = 'flex';
+        document.getElementById('smart-banner-text').innerHTML = `
+      💡 <strong>${finishedCount} completed videos</strong> are still cluttering your queue. Clearing them preserves the <strong>${inProgressCount}</strong> you're still watching.
+    `;
+      } else {
+        smartBanner.style.display = 'none';
+      }
+
+      // Bulk Selection Bar
+      const bulkBar = document.getElementById('bulk-bar');
+      const listContainer = document.getElementById('proto-video-list');
+      if (selectedIds.size > 0 && isProposedMode) {
+        bulkBar.style.display = 'flex';
+        document.getElementById('bulk-count-label').textContent = `${selectedIds.size} video${selectedIds.size > 1 ? 's' : ''} selected`;
+        listContainer.classList.add('in-bulk-mode');
+      } else {
+        bulkBar.style.display = 'none';
+        listContainer.classList.remove('in-bulk-mode');
+      }
+
+      // Render Rows
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+      <div style="text-align: center; padding: 60px 20px; color: var(--tx-sec);">
+        <p style="font-size: 16px; margin-bottom: 8px;">No videos match your active filter.</p>
+        <button class="proto-btn" onclick="resetFilters()">Reset all filters</button>
+      </div>
+    `;
+        return;
+      }
+
+      listContainer.innerHTML = filtered.map(v => {
+        const isChecked = selectedIds.has(v.id);
+        let statusText = 'Not started';
+        let statusClass = 'unwatched';
+        if (v.progress >= 90) {
+          statusText = '✓ Watched';
+          statusClass = 'watched';
+        } else if (v.progress > 0) {
+          statusText = `⏸ ${v.progress}% watched`;
+          statusClass = 'started';
+        }
+
+        return `
+      <div class="proto-row ${isChecked ? 'selected' : ''}" data-id="${v.id}">
+        <input type="checkbox" class="proto-checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVideo(${v.id}, event)">
+
+        <div class="proto-thumb" style="background: linear-gradient(135deg, hsl(${v.hue}, 45%, 38%), hsl(${(v.hue + 45) % 360}, 55%, 18%));">
+          <span class="proto-initial">${v.title.charAt(0)}</span>
+          <span class="duration-badge">${v.duration}:00</span>
+          ${v.progress > 0 ? `<div class="progress-line" style="width: ${v.progress}%;"></div>` : ''}
+        </div>
+
+        <div class="proto-info">
+          <h4>${v.title}</h4>
+          <div class="sub">
+            <span>${v.channel}</span> •
+            <span>${formatViews(v.views)}</span> •
+            <span>added ${formatDaysAgo(v.daysAgo)}</span>
+            ${isProposedMode ? `<span class="proto-tag">${v.category}</span>` : ''}
+          </div>
+          <div class="proto-status ${statusClass}">${statusText}</div>
+        </div>
+
+        <div class="proto-row-actions">
+          <button title="Share" onclick="triggerToast('Share sheet opened')">↗</button>
+          <button title="Add to playlist" onclick="triggerToast('Save to playlist dialog')">＋</button>
+          <button title="Remove from list" onclick="removeSingleVideo(${v.id})">✕</button>
+        </div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    function toggleSelectVideo(id, event) {
+      const filtered = getFilteredList();
+      const currentIndex = filtered.findIndex(x => x.id === id);
+
+      if (event.shiftKey && lastSelectedId !== null) {
+        const lastIndex = filtered.findIndex(x => x.id === lastSelectedId);
+        if (lastIndex !== -1) {
+          const [start, end] = [Math.min(lastIndex, currentIndex), Math.max(lastIndex, currentIndex)];
+          for (let i = start; i <= end; i++) {
+            selectedIds.add(filtered[i].id);
+          }
+          renderPrototype();
+          return;
+        }
+      }
+
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+      } else {
+        selectedIds.add(id);
+      }
+      lastSelectedId = id;
+      renderPrototype();
+    }
+
+    function toggleSelectAllInView() {
+      const filtered = getFilteredList();
+      const allInViewSelected = filtered.length > 0 && filtered.every(v => selectedIds.has(v.id));
+
+      if (allInViewSelected) {
+        filtered.forEach(v => selectedIds.delete(v.id));
+      } else {
+        filtered.forEach(v => selectedIds.add(v.id));
+      }
+      renderPrototype();
+    }
+
+    function clearSelection() {
+      selectedIds.clear();
+      renderPrototype();
+    }
+
+    function removeSingleVideo(id) {
+      const target = playlistItems.find(x => x.id === id);
+      if (!target) return;
+      lastDeletedBatch = [target];
+      playlistItems = playlistItems.filter(x => x.id !== id);
+      selectedIds.delete(id);
+      renderPrototype();
+      triggerToast('Removed 1 video from Watch later', true);
+    }
+
+    function deleteSelected() {
+      if (selectedIds.size === 0) return;
+      const count = selectedIds.size;
+      lastDeletedBatch = playlistItems.filter(x => selectedIds.has(x.id));
+      playlistItems = playlistItems.filter(x => !selectedIds.has(x.id));
+      selectedIds.clear();
+      renderPrototype();
+      triggerToast(`Removed ${count} video${count > 1 ? 's' : ''} from Watch later`, true);
+    }
+
+    function reviewFinishedBatch() {
+      const finished = playlistItems.filter(x => x.progress >= 90);
+      selectedIds = new Set(finished.map(x => x.id));
+      protoFilter.category = 'All';
+      protoFilter.under20Only = false;
+      protoFilter.inProgressOnly = false;
+      protoFilter.searchQuery = '';
+      renderPrototype();
+      triggerToast(`Selected ${finished.length} finished videos. Check them, then click Remove.`, false);
+    }
+
+    function resetFilters() {
+      protoFilter = {
+        category: "All",
+        under20Only: false,
+        inProgressOnly: false,
+        searchQuery: "",
+        sortBy: "manual"
+      };
+      document.getElementById('proto-search-input').value = '';
+      renderPrototype();
+    }
+
+    /* Modal Implementation */
+    function openCleanModal(type) {
+      closeMenu();
+      const modal = document.getElementById('cleanup-modal');
+      const content = document.getElementById('cleanup-modal-content');
+
+      const finishedCount = playlistItems.filter(x => x.progress >= 90).length;
+      const anyWatchedCount = playlistItems.filter(x => x.progress > 0).length;
+      const inProgressCount = anyWatchedCount - finishedCount;
+
+      if (type === 'proposed') {
+        content.innerHTML = `
+      <h2>Smart Clean-Up</h2>
+      <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 16px;">
+        Choose which watched videos to remove from Watch later:
+      </p>
+
+      <label class="modal-radio-option">
+        <input type="radio" name="cleanScope" value="finished" checked>
+        <div>
+          <b>Only finished videos (Recommended)</b>
+          <small>Removes ${finishedCount} videos watched 90% or more. Keeps half-watched ones.</small>
+        </div>
+      </label>
+
+      <label class="modal-radio-option">
+        <input type="radio" name="cleanScope" value="allStarted">
+        <div>
+          <b>Everything I've started</b>
+          <small>Removes ${anyWatchedCount} videos, including ${inProgressCount} you haven't finished.</small>
+        </div>
+      </label>
+
+      <div class="modal-actions">
+        <button class="proto-btn" onclick="closeModal()">Cancel</button>
+        <button class="proto-btn" onclick="previewCleanSelection()">Review in list first</button>
+        <button class="proto-btn primary" onclick="executeCleanModal()">Clean now</button>
+      </div>
+    `;
+      } else {
+        content.innerHTML = `
+      <h2>Remove watched videos</h2>
+      <p style="font-size: 13px; color: var(--tx-sec); margin-bottom: 12px;">
+        This will remove all videos you've started watching from Watch later.
+      </p>
+      <div style="background: #fff2f2; border: 1px solid #ffd0d0; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--yt-red-dark); margin-bottom: 16px;">
+        ⚠️ Warning: This removes ${inProgressCount} partially watched videos without showing a preview list.
+      </div>
+      <div class="modal-actions">
+        <button class="proto-btn" onclick="closeModal()">Cancel</button>
+        <button class="proto-btn primary" onclick="executeCurrentClean()">Remove</button>
+      </div>
+    `;
+      }
+      modal.classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('cleanup-modal').classList.remove('open');
+    }
+
+    function previewCleanSelection() {
+      const scope = document.querySelector('input[name="cleanScope"]:checked').value;
+      const targets = (scope === 'finished')
+        ? playlistItems.filter(x => x.progress >= 90)
+        : playlistItems.filter(x => x.progress > 0);
+
+      selectedIds = new Set(targets.map(x => x.id));
+      closeModal();
+      renderPrototype();
+      triggerToast(`Previewing ${targets.length} videos selected for removal.`);
+    }
+
+    function executeCleanModal() {
+      const scope = document.querySelector('input[name="cleanScope"]:checked').value;
+      const targets = (scope === 'finished')
+        ? playlistItems.filter(x => x.progress >= 90)
+        : playlistItems.filter(x => x.progress > 0);
+
+      closeModal();
+      if (targets.length === 0) {
+        triggerToast('No matching videos to clean');
+        return;
+      }
+      lastDeletedBatch = [...targets];
+      const targetIds = new Set(targets.map(x => x.id));
+      playlistItems = playlistItems.filter(x => !targetIds.has(x.id));
+      selectedIds.clear();
+      renderPrototype();
+      triggerToast(`Cleaned ${targets.length} videos from Watch later`, true);
+    }
+
+    function executeCurrentClean() {
+      const targets = playlistItems.filter(x => x.progress > 0);
+      closeModal();
+      playlistItems = playlistItems.filter(x => x.progress === 0);
+      renderPrototype();
+      triggerToast(`Removed ${targets.length} watched videos`, false);
+    }
+
+    /* Toast & Undo Handling */
+    function triggerToast(msg, showUndo = false) {
+      const box = document.getElementById('toast-box');
+      const text = document.getElementById('toast-text');
+      const undoBtn = document.getElementById('toast-undo-btn');
+
+      text.textContent = msg;
+      undoBtn.style.display = showUndo ? 'inline-block' : 'none';
+      box.classList.add('show');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        box.classList.remove('show');
+      }, showUndo ? 8500 : 3000);
+    }
+
+    function performUndo() {
+      if (!lastDeletedBatch || lastDeletedBatch.length === 0) return;
+      playlistItems = [...playlistItems, ...lastDeletedBatch];
+      const restoredCount = lastDeletedBatch.length;
+      lastDeletedBatch = null;
+      document.getElementById('toast-box').classList.remove('show');
+      renderPrototype();
+      triggerToast(`Restored ${restoredCount} video${restoredCount > 1 ? 's' : ''}`);
+    }
+
+    /* Flyout Menu */
+    function toggleMenu(e) {
+      e.stopPropagation();
+      const flyout = document.getElementById('menu-flyout');
+      flyout.classList.toggle('open');
+    }
+
+    function closeMenu() {
+      document.getElementById('menu-flyout').classList.remove('open');
+    }
+
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('#menu-flyout') && !e.target.closest('#proto-dots-menu-btn')) {
+        closeMenu();
+      }
+      if (e.target.id === 'cleanup-modal') {
+        closeModal();
+      }
+    });
+
+    // Initial boot
+    updateSlideUI();
+    renderPrototype();
+  </script>
+</body>
+
+</html>
